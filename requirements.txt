@@ -1,0 +1,131 @@
+Desafío del proyecto IoT - Supervisión medioambiental en un entorno industrial
+
+(Icon) Main Topics.svgEscenario
+
+Imagine que le ha contratado una empresa que gestiona un almacén inteligente para el almacenamiento de alimentos. Este entorno no debe superar unos umbrales específicos de temperatura y humedad; de lo contrario, podría provocar el deterioro del producto y pérdidas económicas.
+
+Tu reto es desarrollar una solución IoT robusta, segura y fiable para supervisar, registrar y emitir alertas en tiempo real cuando la temperatura supere los 37 °C .
+
+No se trata de una simple simulación. Se espera que diseñe un sistema completo, pensando en todo, desde el hardware hasta la interfaz de visualización y, lo que es más importante, incorporando estrategias de ciberseguridad para garantizar que tanto los datos como los dispositivos estén protegidos frente a brechas y fallos.
+
+(Icon) Goals.svg Desafío técnico - ¿Qué debe construir?
+
+Desarrollo de una solución de software IoT para la medición de temperatura ambiental en un escenario industrial. 
+
+El objetivo del proyecto es desarrollar un sistema que permita medir la temperatura ambiental y generar alertas si la temperatura excede un determinado umbral. 
+
+Imagina una empresa con un almacén inteligente donde guarda alimentos. Este lugar debe ser monitoreado estrictamente en cuanto a la temperatura ambiente. 
+
+Crea un proyecto de IoT para emitir alerta cuando la temperatura excede los 37 grados Celsius. 
+
+Requerimientos funcionales: 
+
+Controlador Arduino o ESP32: 
+
+Implementar código Ino. 
+La aplicación debe mostrar: 
+Cuando la Temperatura excede los 37 grados Celsius. 
+Emitir una alerta beep. 
+Permitir activar el servo para reducir la temperatura ambiente. 
+Conectarse remotamente mediante una interfaz de red con un servidor Broker seguro. 
+Publicar las mediciones de temperatura a un tópico MQTT. 
+Mediante una plataforma IoT (Thingspeak o NodeRed)  
+Recopilar los datos de temperatura y humedad. 
+Visualizar los datos acumulados en una grafica adecuada. 
+Mediante una aplicación (desktop, consola o web) programar acciones remotas que permitan reducir la temperatura cuando registre una alerta. 
+Requerimientos no funcionales: 
+
+Sensor DHT 22  
+Controlador Arduino Uno, ESP32 
+Beep 
+Servo 
+Led 
+Dos botones. 
+Diagrama de ejemplo propuesto:
+
+image.png
+
+Capa de visualización
+
+- Crea un Dashboard profesional en ThingSpeak o NodeRed para visualizar:
+
+Gráficos de temperatura y humedad en tiempo real.
+Indicadores de alerta (por ejemplo, líneas de umbral rojas).
+Registros de alertas de eventos.
+Opcionales:
+
+Enviar alertas por correo electrónico cuando se superen los límites (OPCIONAL).
+Almacenar los datos correctamente en la base de datos SQL o NoSQL (OPCIONAL).
+Herramientas recomendadas
+
+- Hardware: ESP32 + DHT22 + Zumbador +  Led + Servo motor
+
+- Dashboard: NodeRed o ThingSpeak
+
+- Plataforma de simulación: Wokwi
+
+- Protocolo: MQTT con TLS o API REST segura
+
+(Icon) Submission.svg Entregables - Proyecto IoT: Monitorización Ambiental Industrial
+
+(Entregables obligatorios)
+
+Vídeo presentación (hasta 6 minutos) explicativo del proyecto.
+Documentación técnica completa (PDF o DOC), que incluya
+Descripción detallada del proyecto (visión general, objetivos y funcionamiento).
+Arquitectura del sistema (capas, flujo de datos y componentes).
+Descripción de los sensores, actuadores y hardware utilizados.
+Requisitos funcionales y no funcionales.
+Estrategia de ciberseguridad adoptada.
+Código fuente (.ino o .cpp)
+Código adicional del sistema de adquisición (si no está incrustado en el boceto principal)
+Enlace público al proyecto funcional de Wokwi
+Pruebas (capturas de pantalla, fotos o grabaciones) que muestren la solución funcionando en Wokwi
+
+Rubrica:
+Este criterio depende de una competencia de aprendizajeVídeo presentación explicativo del proyecto.
+50 pts
+Excelente
+Vídeo claro, conciso (dentro de 6 min), bien estructurado, audio y vídeo de alta calidad. Demuestra dominio completo y explica el proyecto de forma atractiva y comprensible.
+
+Documentación técnica completa
+(PDF o DOC)
+50 pts
+Excelente
+Documento entregado en el formato solicitado, impecablemente organizado, completo en todas sus secciones, profesional y fácil de leer y navegar.
+
+Este criterio depende de una competencia de aprendizajeDescripción detallada del proyecto (visión general, objetivos y funcionamiento)
+50 pts
+Excelente
+Visión clara y convincente. Objetivos SMART (Específicos, Medibles, Alcanzables, Relevantes, con Plazo). Funcionamiento explicado con total claridad, detalle y lógica.
+
+Este criterio depende de una competencia de aprendizajeArquitectura del sistema (capas, flujo de datos y componentes).
+50 pts
+Excelente
+Diagramas de arquitectura claros, precisos y bien etiquetados. Descripción detallada y coherente de capas, componentes, sus interacciones y el flujo de datos.
+
+
+Descripción de los sensores, actuadores y hardware utilizados.
+50 pts
+Excelente
+Listado completo y justificado de todo el hardware. Especificaciones técnicas relevantes incluidas y explicación clara y precisa del rol de cada elemento en el sistema
+
+Este criterio depende de una competencia de aprendizajeRequisitos funcionales y no funcionales.
+50 pts
+Excelente
+Requisitos claros, completos, medibles, alcanzables y bien diferenciados entre funcionales y no funcionales. Perfectamente alineados con los objetivos del proyecto.
+
+Este criterio depende de una competencia de aprendizajeEstrategia de ciberseguridad adoptada.
+50 pts
+Excelente
+Identificación exhaustiva de amenazas relevantes. Medidas de mitigación robustas, bien justificadas y adecuadas al proyecto. Estrategia integral y bien argumentada.
+
+Este criterio depende de una competencia de aprendizajeCódigo fuente (.ino o .cpp).
+50 pts
+Excelente
+Código bien estructurado, eficientemente programado, exhaustivamente comentado, fácil de entender y mantener. Cumple con todas las funcionalidades y sin errores.
+
+Defensa del proyecto.
+50 pts
+Excelente
+Demuestra dominio completo y profundo del proyecto. Responde a todas las preguntas con claridad, precisión y confianza. Comunicación verbal y no verbal excelente.

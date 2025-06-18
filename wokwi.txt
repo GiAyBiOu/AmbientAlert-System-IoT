@@ -1,0 +1,591 @@
+diagram.json:
+{
+  "version": 1,
+  "author": "Gabriel Mendoza",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": -33.6,
+      "left": 85.85,
+      "rotate": 90,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-lcd2004",
+      "id": "lcd1",
+      "top": 208,
+      "left": 149.6,
+      "attrs": { "pins": "i2c" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": -118.8,
+      "left": 90.2,
+      "attrs": { "color": "white" }
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -134.1,
+      "left": -149.4,
+      "attrs": { "temperature": "11.8" }
+    },
+    { "type": "wokwi-servo", "id": "servo1", "top": -21.2, "left": 249.6, "attrs": {} },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 50.4,
+      "left": -219,
+      "attrs": { "volume": "0.1" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 182.5,
+      "left": -243.3,
+      "rotate": 270,
+      "attrs": { "color": "yellow", "xray": "1" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn2",
+      "top": 182.5,
+      "left": -195.3,
+      "rotate": 270,
+      "attrs": { "color": "blue", "xray": "1" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "dht1:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "dht1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "dht1:SDA", "esp:4", "green", [ "v0" ] ],
+    [ "bz1:2", "esp:13", "red", [ "v0" ] ],
+    [ "bz1:1", "esp:GND.1", "black", [ "v0" ] ],
+    [ "lcd1:GND", "esp:GND.1", "black", [ "h-259.2", "v-86.4" ] ],
+    [ "lcd1:SCL", "esp:22", "cyan", [ "h-28.8", "v-220.5" ] ],
+    [ "lcd1:SDA", "esp:21", "cyan", [ "h-38.4", "v-182.2" ] ],
+    [ "led1:C", "esp:GND.2", "black", [ "v0" ] ],
+    [ "r1:1", "led1:A", "violet", [ "h0" ] ],
+    [ "r1:2", "esp:18", "violet", [ "v18", "h19.2", "v76.8" ] ],
+    [ "btn2:2.l", "esp:GND.1", "black", [ "v19.2", "h48.2", "v-105.6" ] ],
+    [ "btn1:2.l", "esp:GND.1", "black", [ "v19.2", "h96.2", "v-105.6" ] ],
+    [ "btn2:1.l", "esp:14", "blue", [ "v38.4", "h76.8", "v-144" ] ],
+    [ "btn1:1.l", "esp:12", "yellow", [ "v48", "h134.4", "v-144" ] ],
+    [ "servo1:GND", "esp:GND.2", "black", [ "v9.6", "h-139.24" ] ],
+    [ "servo1:V+", "esp:5V", "red", [ "h-105.6", "v182.5", "h-139.39" ] ],
+    [ "esp:16", "servo1:PWM", "orange", [ "h52.84", "v-86.6" ] ],
+    [ "lcd1:VCC", "esp:3V3", "red", [ "h-192", "v-220.7" ] ]
+  ],
+  "dependencies": {}
+}
+
+libraries.txt:
+# Wokwi Library List
+# See https://docs.wokwi.com/guides/libraries
+
+DHT sensor library
+PubSubClient
+WiFi
+LiquidCrystal I2C
+ArduinoJson
+ESP32Servo
+
+
+sketch.ino:
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
+#include <DHT.h>
+#include <LiquidCrystal_I2C.h>
+#include <ESP32Servo.h>
+#include <ArduinoJson.h>
+
+#define DHT_PIN 4
+#define DHT_TYPE DHT22
+#define BUZZER_PIN 13
+#define LED_PIN 18
+#define SERVO_PIN 16
+#define BUTTON1_PIN 12
+#define BUTTON2_PIN 14
+#define TEMP_THRESHOLD 37.0
+#define DEBOUNCE_DELAY 50
+
+const char* ssid = "Wokwi-GUEST";
+const char* password = "";
+const char* mqtt_server = "test.mosquitto.org";
+const int mqtt_port = 8884;
+const char* mqtt_topic = "gm/ambientsystem/iot/sensors";
+const char* mqtt_control_topic = "gm/ambientsystem/iot/control";
+
+DHT dht(DHT_PIN, DHT_TYPE);
+LiquidCrystal_I2C lcd(0x27, 20, 4);
+Servo coolingServo;
+WiFiClientSecure espClient;
+PubSubClient client(espClient);
+
+const char* ca_cert = \
+"-----BEGIN CERTIFICATE-----\n" \
+"MIIEAzCCAuugAwIBAgIUBY1hlCGvdj4NhBXkZ/uLUZNILAwwDQYJKoZIhvcNAQEL\n" \
+"BQAwgZAxCzAJBgNVBAYTAkdCMRcwFQYDVQQIDA5Vbml0ZWQgS2luZ2RvbTEOMAwG\n" \
+"A1UEBwwFRGVyYnkxEjAQBgNVBAoMCU1vc3F1aXR0bzELMAkGA1UECwwCQ0ExFjAU\n" \
+"BgNVBAMMDW1vc3F1aXR0by5vcmcxHzAdBgkqhkiG9w0BCQEWEHJvZ2VyQGF0Y2hv\n" \
+"by5vcmcwHhcNMjAwNjA5MTEwNjM5WhcNMzAwNjA3MTEwNjM5WjCBkDELMAkGA1UE\n" \
+"BhMCR0IxFzAVBgNVBAgMDlVuaXRlZCBLaW5nZG9tMQ4wDAYDVQQHDAVEZXJieTES\n" \
+"MBAGA1UECgwJTW9zcXVpdHRvMQswCQYDVQQLDAJDQTEWMBQGA1UEAwwNbW9zcXVp\n" \
+"dHRvLm9yZzEfMB0GCSqGSIb3DQEJARYQcm9nZXJAYXRjaG9vLm9yZzCCASIwDQYJ\n" \
+"KoZIhvcNAQEBBQADggEPADCCAQoCggEBAME0HKmIzfTOwkKLT3THHe+ObdizamPg\n" \
+"UZmD64Tf3zJdNeYGYn4CEXbyP6fy3tWc8S2boW6dzrH8SdFf9uo320GJA9B7U1FW\n" \
+"Te3xda/Lm3JFfaHjkWw7jBwcauQZjpGINHapHRlpiCZsquAthOgxW9SgDgYlGzEA\n" \
+"s06pkEFiMw+qDfLo/sxFKB6vQlFekMeCymjLCbNwPJyqyhFmPWwio/PDMruBTzPH\n" \
+"3cioBnrJWKXc3OjXdLGFJOfj7pP0j/dr2LH72eSvv3PQQFl90CZPFhrCUcRHSSxo\n" \
+"E6yjGOdnz7f6PveLIB574kQORwt8ePn0yidrTC1ictikED3nHYhMUOUCAwEAAaNT\n" \
+"MFEwHQYDVR0OBBYEFPVV6xBUFPiGKDyo5V3+Hbh4N9YSMB8GA1UdIwQYMBaAFPVV\n" \
+"6xBUFPiGKDyo5V3+Hbh4N9YSMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEL\n" \
+"BQADggEBAGa9kS21N70ThM6/Hj9D7mbVxKLBjVWe2TPsGfbl3rEDfZ+OKRZ2j6AC\n" \
+"6r7jb4TZO3dzF2p6dgbrlU71Y/4K0TdzIjRj3cQ3KSm41JvUQ0hZ/c04iGDg/xWf\n" \
+"+pp58nfPAYwuerruPNWmlStWAXf0UTqRtg4hQDWBuUFDJTuWuuBvEXudz74eh/wK\n" \
+"sMwfu1HFvjy5Z0iMDU8PUDepjVolOCue9ashlS4EB5IECdSR2TItnAIiIwimx839\n" \
+"LdUdRudafMu5T5Xma182OC0/u/xRlEm+tvKGGmfFcN0piqVl8OrSPBgIlb+1IKJE\n" \
+"m/XriWr/Cq4h/JfB7NTsezVslgkBaoU=\n" \
+"-----END CERTIFICATE-----\n";
+
+const char* client_cert = \
+"-----BEGIN CERTIFICATE-----\n" \
+"MIIDfTCCAmWgAwIBAgIBADANBgkqhkiG9w0BAQsFADCBkDELMAkGA1UEBhMCR0Ix\n" \
+"FzAVBgNVBAgMDlVuaXRlZCBLaW5nZG9tMQ4wDAYDVQQHDAVEZXJieTESMBAGA1UE\n" \
+"CgwJTW9zcXVpdHRvMQswCQYDVQQLDAJDQTEWMBQGA1UEAwwNbW9zcXVpdHRvLm9y\n" \
+"ZzEfMB0GCSqGSIb3DQEJARYQcm9nZXJAYXRjaG9vLm9yZzAeFw0yNTA2MDIwODU2\n" \
+"MjdaFw0yNTA4MzEwODU2MjdaMFcxCzAJBgNVBAYTAkJPMQ8wDQYDVQQIDAZMYSBQ\n" \
+"YXoxDzANBgNVBAcMBkxhIFBhejEOMAwGA1UECgwFSmFsYVUxFjAUBgNVBAMMDUVT\n" \
+"UDMyQ2xpZW50R00wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDnLFCN\n" \
+"bH+ao+kh7Zn73CSYQ/7vz5hfLow6aO19RGSx/PUOQ9bcHszjPvcJnoWN78xtS+sg\n" \
+"XY0Yt39CX/Anpk1qcof9GzFNj1+OGZeXwxvdoZhpR5TSNjVncof8p3sIefFXAnHu\n" \
+"lP9FnQcOl/MnBGL5yZV08BlFcKAUGXiudjDTswNg2XTlm+lRC3FsAFF3uC1U6kct\n" \
+"aX0HsKuSjhluKT9IPB1OPp9IyFmYr8PgDlR9c0zM3GD+UKMg/XpyIhktbfaR9vEP\n" \
+"rFfyy/WzTwMuJ285Ugloh3bXX3D3KxCNx836CgHo0Zdvn29lT/Y8sM7ss6RY8Nqt\n" \
+"UMSMhjLOTMDBoActAgMBAAGjGjAYMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgXgMA0G\n" \
+"CSqGSIb3DQEBCwUAA4IBAQBgu0WbcJ7EdizOItLRcoBc2WHhUbjyn2WQGKRl8CXC\n" \
+"gs7vNacE9n7iIwY1BbWtO6pUzvkbFQxJ3lukCGwsIVUMHrVGQFrOa1isaO3HqGgt\n" \
+"8m7IFD1J2JkZFP60jSkih1IraZXsUB3BbsxuvvKxJikChRNRqCtAbxRR0JqJRR6n\n" \
+"6DuyXV1VuuvGj/euMj20lXSiP52FNoos5n+wuJ2l+xY4bMWBJ8XPKCBcd2W3A5CR\n" \
+"/Oldxml4wkIDrRUCsyZoQaBccUvVzrjHrK9Zo5cg7SIIB7e02j0ktPFnTF0EbXVI\n" \
+"WyGt2CcidFCdc3aV6QcXjFGwMYnb5peVuOM2yjgqJVp0\n" \
+"-----END CERTIFICATE-----\n";
+
+const char* client_key = \
+"-----BEGIN PRIVATE KEY-----\n" \
+"MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDnLFCNbH+ao+kh\n" \
+"7Zn73CSYQ/7vz5hfLow6aO19RGSx/PUOQ9bcHszjPvcJnoWN78xtS+sgXY0Yt39C\n" \
+"X/Anpk1qcof9GzFNj1+OGZeXwxvdoZhpR5TSNjVncof8p3sIefFXAnHulP9FnQcO\n" \
+"l/MnBGL5yZV08BlFcKAUGXiudjDTswNg2XTlm+lRC3FsAFF3uC1U6kctaX0HsKuS\n" \
+"jhluKT9IPB1OPp9IyFmYr8PgDlR9c0zM3GD+UKMg/XpyIhktbfaR9vEPrFfyy/Wz\n" \
+"TwMuJ285Ugloh3bXX3D3KxCNx836CgHo0Zdvn29lT/Y8sM7ss6RY8NqtUMSMhjLO\n" \
+"TMDBoActAgMBAAECggEADYBBjhjllO74uSIKybJQMtJZy8CoifqKdwjUwemiJeD7\n" \
+"oOMmY8GqvqTZQacP7ruwCTwTVdcQ2/4vgP1gZbhpMgvRVF9nsDts3bwx5cufz4BW\n" \
+"CeQD1YkT8mA2f/N6FIMmrKm4ZLIv/G1Q0bHfIgq4CxWSVHuHRk5vEu1v5mSBsoNY\n" \
+"BDGP5no60x65fL8pgELzsSq+xTfDUx9wnEUBP/LmSBNoBIYAmEHi0wbkr03R8pEr\n" \
+"0dAPPblI3Wj8p1/EJDuqu1hO9OR68R1h4m9IWvSidIcqc4+N8nGco+nc4VEyzZ69\n" \
+"57CmC9banKGMscMTFZO3ZR6Gde8Moak2rAiiukoDowKBgQD6gmjlRMICjIDNOI1+\n" \
+"5uN1nvua3exkH3IADTdo7H/pBGmUSiv2pMipbnWlNpGeqlfEn572Mef+2rsYoxmX\n" \
+"qgs2pTHY0e3VYqqVeeS47G3OABdFxcLQckw2YNh3Ngrq8nguOWZ8By8vpZzq6GDw\n" \
+"Bwp87okJIrZhP+8LY7RuuyllAwKBgQDsPWkHwAK20lmTFJrWFRCD7yf2uMvAIDWX\n" \
+"cQgQyid3LHeZgfKuG5bf9ay+1kQTZ0gvUmb7c1EoyvfErFNZNyZ9PYe1RbUoQ0Iu\n" \
+"xoezJiLPuxPWv+VbHdbcLZ1sSLePvLkWGyHRxOEepF3HQO5UgM/7cz1XcltYUOoz\n" \
+"vXG17A+0DwKBgQDd+psqtd/Y1Fn5/+faEIx0GJnJZGdpXTfudceo0RCTEdbgkU0d\n" \
+"tG0fPgM/j/g/iaBWWj9I13ZFLdtmfHhcHVDsbjuaboN6d4DDDY0wlEjEpu34ZMI5\n" \
+"ZV7FPNHz6M6J3KvEAhcfRlp4tR80RRBJAWQ4ykJh9wF3cWjIReSHzo9iswKBgAqG\n" \
+"ke9udrB+ns8W0+9F8P5v4W/0u99LkBe3SYy19RwyNwH38EAhqo8/+vplwZK7v1Oc\n" \
+"cEoz0SHoKTHyG6SV+HkMDMfe2zt4A7Lh1Zn90P9Abpna4vU0VyZoQeNZOhSFbBm4\n" \
+"C8G06/LZj/QYyIWrV5j0gX8r8TX2JPk5L5/TbL+xAoGAFE8hSg+Xco8F2aM3nvtl\n" \
+"k3gsicoR8mMyET5x4fjCJUcg6lf/iEWuDYaWrUSu8XUVxbYGpETEDJsje5R+6hsS\n" \
+"McI2ajdMFSypvYk2Ijvq+wolwNCZZjfc8Vgr0RebTxKJIJP0mKztiC1DgltUHq8V\n" \
+"dAAcpSycF/LJJdcZEebAua8=\n" \
+"-----END PRIVATE KEY-----\n";
+
+float temperature = 0.0;
+float humidity = 0.0;
+bool alertActive = false;
+bool damperOpen = false;
+bool manualDamperActive = false;
+
+unsigned long lastSensorRead = 0;
+unsigned long lastMqttPublish = 0;
+unsigned long lastDisplayUpdate = 0;
+unsigned long alertStartTime = 0;
+unsigned long manualDamperStartTime = 0;
+unsigned long lastBuzzerToggle = 0;
+bool buzzerState = false;
+
+int button1State = HIGH;
+int button2State = HIGH;
+int lastButton1State = HIGH;
+int lastButton2State = HIGH;
+unsigned long lastButton1Press = 0;
+unsigned long lastButton2Press = 0;
+
+const unsigned long MANUAL_DAMPER_TIME = 10000;
+const int SERVO_CLOSED_POS = 0;
+const int SERVO_OPEN_POS = 90;
+
+void setup() {
+    Serial.begin(115200);
+    Serial.println("System Starting");
+    
+    lcd.init();
+    lcd.backlight();
+    displayMessage("System Starting...", "Initializing", "", "");
+    
+    pinMode(BUZZER_PIN, OUTPUT);
+    pinMode(LED_PIN, OUTPUT);
+    pinMode(BUTTON1_PIN, INPUT_PULLUP);
+    pinMode(BUTTON2_PIN, INPUT_PULLUP);
+    
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(BUZZER_PIN, LOW);
+    
+    dht.begin();
+    
+    ESP32PWM::allocateTimer(0);
+    coolingServo.setPeriodHertz(50);
+    coolingServo.attach(SERVO_PIN, 500, 2400);
+    moveServo(SERVO_CLOSED_POS);
+    damperOpen = false;
+    
+    setupWiFi();
+    setupMQTT();
+    
+    Serial.println("System Ready");
+    displayMessage("System Ready", "WiFi Connected", "MQTT Secured", "Status: Normal");
+    delay(2000);
+}
+
+void loop() {
+    if (!client.connected()) {
+        reconnectMQTT();
+    }
+    client.loop();
+    
+    readSensors();
+    checkButtons();
+    updateDisplay();
+    publishData();
+    handleAlerts();
+    manageManualDamper();
+    
+    delay(100);
+}
+
+void moveServo(int angle) {
+    coolingServo.write(angle);
+    delay(500);
+    Serial.print("Servo moved to: ");
+    Serial.println(angle);
+}
+
+void setupWiFi() {
+    WiFi.begin(ssid, password);
+    Serial.print("Connecting to WiFi");
+    
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    
+    Serial.println();
+    Serial.print("WiFi connected - IP: ");
+    Serial.println(WiFi.localIP());
+}
+
+void setupMQTT() {
+    espClient.setCACert(ca_cert);
+    espClient.setCertificate(client_cert);
+    espClient.setPrivateKey(client_key);
+    
+    client.setServer(mqtt_server, mqtt_port);
+    client.setCallback(mqttCallback);
+    
+    Serial.println("mTLS configured");
+}
+
+void reconnectMQTT() {
+    while (!client.connected()) {
+        Serial.print("MQTT connecting...");
+        
+        String clientId = "ESP32Client-" + String(random(0xffff), HEX);
+        
+        if (client.connect(clientId.c_str())) {
+            Serial.println(" connected!");
+            client.subscribe(mqtt_control_topic);
+        } else {
+            Serial.print(" failed, rc=");
+            Serial.print(client.state());
+            Serial.println(" retrying in 5 seconds");
+            delay(5000);
+        }
+    }
+}
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+    String message;
+    for (int i = 0; i < length; i++) {
+        message += (char)payload[i];
+    }
+    
+    Serial.println("MQTT received: " + message);
+    
+    if (message == "OPEN_DAMPER") {
+        activateManualDamper();
+    } else if (message == "CLOSE_DAMPER") {
+        closeDamper();
+    } else if (message == "SILENCE_ALARM") {
+        silenceAlarm();
+    } else if (message == "RESET_SYSTEM") {
+        resetSystem();
+    }
+}
+
+void readSensors() {
+    if (millis() - lastSensorRead > 2000) {
+        humidity = dht.readHumidity();
+        temperature = dht.readTemperature();
+        
+        if (isnan(humidity) || isnan(temperature)) {
+            Serial.println("DHT22 error");
+            return;
+        }
+        
+        Serial.printf("T: %.1fC, H: %.1f%% | Threshold: %.1fC\n", 
+                     temperature, humidity, TEMP_THRESHOLD);
+        lastSensorRead = millis();
+    }
+}
+
+void checkButtons() {
+    int reading1 = digitalRead(BUTTON1_PIN);
+    int reading2 = digitalRead(BUTTON2_PIN);
+    
+    if (reading1 != lastButton1State) {
+        lastButton1Press = millis();
+    }
+    
+    if ((millis() - lastButton1Press) > DEBOUNCE_DELAY) {
+        if (reading1 != button1State) {
+            button1State = reading1;
+            
+            if (button1State == LOW) {
+                Serial.println("BUTTON 1 - Manual damper (10s)");
+                activateManualDamper();
+            }
+        }
+    }
+    
+    if (reading2 != lastButton2State) {
+        lastButton2Press = millis();
+    }
+    
+    if ((millis() - lastButton2Press) > DEBOUNCE_DELAY) {
+        if (reading2 != button2State) {
+            button2State = reading2;
+            
+            if (button2State == LOW) {
+                Serial.println("BUTTON 2 - Reset");
+                resetSystem();
+            }
+        }
+    }
+    
+    lastButton1State = reading1;
+    lastButton2State = reading2;
+}
+
+void activateManualDamper() {
+    Serial.println("Manual damper activated - 10s");
+    manualDamperActive = true;
+    manualDamperStartTime = millis();
+    openDamper();
+}
+
+void updateDisplay() {
+    if (millis() - lastDisplayUpdate > 1000) {
+        char line1[21], line2[21], line3[21], line4[21];
+        
+        snprintf(line1, sizeof(line1), "Temp: %.1fC", temperature);
+        snprintf(line2, sizeof(line2), "Humidity: %.1f%%", humidity);
+        
+        if (alertActive) {
+            strcpy(line3, "ALERT ACTIVE");
+        } else if (manualDamperActive) {
+            unsigned long remaining = (MANUAL_DAMPER_TIME - (millis() - manualDamperStartTime)) / 1000;
+            snprintf(line3, sizeof(line3), "Manual: %lus left", remaining);
+        } else {
+            strcpy(line3, "Status: Normal");
+        }
+        
+        if (damperOpen) {
+            strcpy(line4, "Damper: OPEN");
+        } else {
+            strcpy(line4, "Damper: CLOSED");
+        }
+        
+        displayMessage(line1, line2, line3, line4);
+        lastDisplayUpdate = millis();
+    }
+}
+
+void publishData() {
+    if (millis() - lastMqttPublish > 5000) {
+        JsonDocument doc;
+        doc["device_id"] = "ESP32-ENV-001";
+        doc["timestamp"] = millis();
+        doc["temperature"] = temperature;
+        doc["humidity"] = humidity;
+        doc["alert_active"] = alertActive;
+        doc["damper_open"] = damperOpen;
+        doc["manual_damper_active"] = manualDamperActive;
+        doc["threshold"] = TEMP_THRESHOLD;
+        doc["led_status"] = digitalRead(LED_PIN) ? "ON" : "OFF";
+        doc["servo_position"] = damperOpen ? SERVO_OPEN_POS : SERVO_CLOSED_POS;
+        
+        String jsonString;
+        serializeJson(doc, jsonString);
+        
+        if (client.publish(mqtt_topic, jsonString.c_str())) {
+            Serial.println("Data published");
+        } else {
+            Serial.println("MQTT publish failed");
+        }
+        
+        lastMqttPublish = millis();
+    }
+}
+
+void handleAlerts() {
+    if (temperature > TEMP_THRESHOLD) {
+        if (!alertActive) {
+            alertActive = true;
+            alertStartTime = millis();
+            Serial.printf("ALERT! %.1fC > %.1fC\n", temperature, TEMP_THRESHOLD);
+            
+            digitalWrite(LED_PIN, HIGH);
+            openDamper();
+        }
+        
+        if (millis() - alertStartTime < 30000) {
+            if (millis() - lastBuzzerToggle > 500) {
+                buzzerState = !buzzerState;
+                if (buzzerState) {
+                    tone(BUZZER_PIN, 1000, 400);
+                } else {
+                    noTone(BUZZER_PIN);
+                }
+                lastBuzzerToggle = millis();
+            }
+        } else {
+            noTone(BUZZER_PIN);
+            buzzerState = false;
+        }
+        
+    } else {
+        if (alertActive) {
+            alertActive = false;
+            noTone(BUZZER_PIN);
+            buzzerState = false;
+            digitalWrite(LED_PIN, LOW);
+            Serial.println("Temperature normalized");
+            
+            if (!manualDamperActive) {
+                closeDamper();
+            }
+        }
+    }
+}
+
+void manageManualDamper() {
+    if (manualDamperActive) {
+        if (millis() - manualDamperStartTime >= MANUAL_DAMPER_TIME) {
+            manualDamperActive = false;
+            Serial.println("Manual damper expired");
+            
+            if (!alertActive) {
+                closeDamper();
+            }
+        }
+    }
+}
+
+void openDamper() {
+    if (!damperOpen) {
+        moveServo(SERVO_OPEN_POS);
+        damperOpen = true;
+        
+        JsonDocument controlDoc;
+        controlDoc["action"] = "damper_opened";
+        controlDoc["timestamp"] = millis();
+        controlDoc["temperature"] = temperature;
+        controlDoc["manual"] = manualDamperActive;
+        controlDoc["servo_position"] = SERVO_OPEN_POS;
+        
+        String controlString;
+        serializeJson(controlDoc, controlString);
+        client.publish("gm/ambientsystem/iot/status", controlString.c_str());
+    }
+}
+
+void closeDamper() {
+    if (damperOpen) {
+        moveServo(SERVO_CLOSED_POS);
+        damperOpen = false;
+        
+        JsonDocument controlDoc;
+        controlDoc["action"] = "damper_closed";
+        controlDoc["timestamp"] = millis();
+        controlDoc["temperature"] = temperature;
+        controlDoc["servo_position"] = SERVO_CLOSED_POS;
+        
+        String controlString;
+        serializeJson(controlDoc, controlString);
+        client.publish("gm/ambientsystem/iot/status", controlString.c_str());
+    }
+}
+
+void silenceAlarm() {
+    noTone(BUZZER_PIN);
+    buzzerState = false;
+    Serial.println("Alarm silenced");
+}
+
+void resetSystem() {
+    Serial.println("SYSTEM RESET");
+    
+    alertActive = false;
+    manualDamperActive = false;
+    
+    noTone(BUZZER_PIN);
+    buzzerState = false;
+    digitalWrite(LED_PIN, LOW);
+    
+    closeDamper();
+    
+    Serial.println("Reset completed");
+    displayMessage("System Reset", "All systems", "returned to", "normal state");
+    delay(2000);
+}
+
+void displayMessage(String line1, String line2, String line3, String line4) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(line1);
+    lcd.setCursor(0, 1);
+    lcd.print(line2);
+    lcd.setCursor(0, 2);
+    lcd.print(line3);
+    lcd.setCursor(0, 3);
+    lcd.print(line4);
+}
+

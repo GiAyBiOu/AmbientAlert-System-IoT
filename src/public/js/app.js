@@ -34,6 +34,8 @@ class AmbientAlertApp {
     async initServices() {
         // Connect to MQTT
         this.updateConnectionStatus('🔄 Connecting to MQTT...', 'warning');
+        this.updateSecurityStatus('🔐 Secure', 'warning');
+        
         await mqttService.connect();
         
         // Subscribe to data
@@ -47,6 +49,11 @@ class AmbientAlertApp {
         
         this.isConnected = true;
         this.updateConnectionStatus('✅ Connected to ESP32', 'success');
+        this.updateSecurityStatus('🔐 Secure', 'success');
+        
+        // Log security information
+        const securityInfo = mqttService.getSecurityInfo();
+        console.log('🔐 Security Configuration:', securityInfo);
     }
 
     setupUI() {
@@ -280,6 +287,14 @@ class AmbientAlertApp {
         const statusElement = document.getElementById('connectionStatus');
         statusElement.textContent = message;
         statusElement.className = `badge bg-${type}`;
+    }
+
+    updateSecurityStatus(message, type = 'secondary') {
+        const statusElement = document.getElementById('securityStatus');
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.className = `badge bg-${type}`;
+        }
     }
 }
 

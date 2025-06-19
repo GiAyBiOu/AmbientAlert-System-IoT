@@ -10,9 +10,9 @@ class MQTTService {
     connect() {
         return new Promise((resolve, reject) => {
             try {
-                console.log('🔄 Conectando a broker MQTT público via WebSocket...');
+                console.log('🔄 Connecting to public MQTT broker via WebSocket...');
                 
-                // Configuración MQTT optimizada para WebSocket
+                // Optimized MQTT configuration for WebSocket
                 const options = {
                     clientId: 'webClient_' + Math.random().toString(16).substr(2, 8),
                     clean: true,
@@ -20,101 +20,101 @@ class MQTTService {
                     reconnectPeriod: 5000,
                     keepalive: 60,
                     protocolVersion: 4,
-                    // Configuración para WebSocket
+                    // WebSocket configuration
                     transformWsUrl: (url, options, client) => {
-                        console.log('🔗 URL WebSocket:', url);
+                        console.log('🔗 WebSocket URL:', url);
                         return url;
                     }
                 };
 
-                // Usar broker público confiable con WebSocket
-                // Eclipse Mosquitto público con soporte WebSocket
+                // Use reliable public broker with WebSocket support
+                // Eclipse Mosquitto public with WebSocket support
                 const brokerUrl = 'wss://test.mosquitto.org:8081';
-                console.log('📡 Conectando a:', brokerUrl);
-                console.log('🎯 Tópicos objetivo: gm/ambientsystem/iot/sensors, gm/ambientsystem/iot/status');
+                console.log('📡 Connecting to:', brokerUrl);
+                console.log('🎯 Target topics: gm/ambientsystem/iot/sensors, gm/ambientsystem/iot/status, gm/ambientsystem/iot/control');
                 
                 this.client = mqtt.connect(brokerUrl, options);
 
                 this.client.on('connect', () => {
-                    console.log('✅ ¡CONECTADO AL BROKER MQTT!');
+                    console.log('✅ CONNECTED TO MQTT BROKER!');
                     console.log('📡 Broker: test.mosquitto.org:8081 (WebSocket Secure)');
-                    console.log('🔐 Conexión segura establecida');
+                    console.log('🔐 Secure connection established');
                     this.isConnected = true;
                     this.reconnectAttempts = 0;
                     
-                    // Suscribirse a los tópicos exactos del ESP32
+                    // Subscribe to ESP32 exact topics
                     this.subscribeToTopics();
                     resolve();
                 });
 
                 this.client.on('message', (topic, message) => {
                     try {
-                        console.log('📨 ¡MENSAJE RECIBIDO!');
-                        console.log('📍 Tópico:', topic);
-                        console.log('📨 Contenido raw:', message.toString());
+                        console.log('📨 MESSAGE RECEIVED!');
+                        console.log('📍 Topic:', topic);
+                        console.log('📨 Raw content:', message.toString());
                         
                         const data = JSON.parse(message.toString());
-                        console.log('📊 DATOS PARSEADOS:', data);
+                        console.log('📊 PARSED DATA:', data);
                         
-                        // Verificar que sea del ESP32 correcto
+                        // Verify it's from the correct ESP32
                         if (data.device_id === 'ESP32-ENV-001') {
-                            console.log('🎯 ¡DATOS DEL ESP32-ENV-001 CONFIRMADOS!');
-                            console.log('🌡️  Temperatura:', data.temperature, '°C');
-                            console.log('💧 Humedad:', data.humidity, '%');
-                            console.log('🚨 Alerta:', data.alert_active ? 'ACTIVA' : 'Normal');
-                            console.log('🌬️  Damper:', data.damper_open ? 'ABIERTO' : 'CERRADO');
+                            console.log('🎯 ESP32-ENV-001 DATA CONFIRMED!');
+                            console.log('🌡️  Temperature:', data.temperature, '°C');
+                            console.log('💧 Humidity:', data.humidity, '%');
+                            console.log('🚨 Alert:', data.alert_active ? 'ACTIVE' : 'Normal');
+                            console.log('🌬️  Damper:', data.damper_open ? 'OPEN' : 'CLOSED');
                             
                             this.notifySubscribers(data);
                         } else {
-                            console.log('💡 Mensaje de otro dispositivo:', data.device_id || 'Sin ID');
+                            console.log('💡 Message from other device:', data.device_id || 'No ID');
                         }
                         
                     } catch (error) {
-                        console.error('❌ Error parseando mensaje:', error);
-                        console.log('📨 Mensaje original:', message.toString());
+                        console.error('❌ Error parsing message:', error);
+                        console.log('📨 Original message:', message.toString());
                     }
                 });
 
                 this.client.on('error', (error) => {
-                    console.error('❌ ERROR MQTT:', error);
+                    console.error('❌ MQTT ERROR:', error);
                     this.isConnected = false;
                     
                     if (this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.reconnectAttempts++;
-                        console.log(`🔄 Intento de reconexión ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+                        console.log(`🔄 Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
                     } else {
-                        console.log('❌ Max intentos alcanzados, activando simulación...');
+                        console.log('❌ Max attempts reached, activating simulation...');
                         this.startFallbackSimulation();
-                        resolve(); // Resolver con simulación
+                        resolve(); // Resolve with simulation
                     }
                 });
 
                 this.client.on('close', () => {
-                    console.log('🔌 Conexión MQTT cerrada');
+                    console.log('🔌 MQTT connection closed');
                     this.isConnected = false;
                 });
 
                 this.client.on('offline', () => {
-                    console.log('📡 Cliente MQTT offline');
+                    console.log('📡 MQTT client offline');
                     this.isConnected = false;
                 });
 
                 this.client.on('reconnect', () => {
-                    console.log('🔄 Reconectando al broker MQTT...');
+                    console.log('🔄 Reconnecting to MQTT broker...');
                 });
 
-                // Timeout para activar simulación si no se conecta
+                // Timeout to activate simulation if connection fails
                 setTimeout(() => {
                     if (!this.isConnected) {
-                        console.log('⏰ Timeout de conexión, activando simulación de respaldo...');
+                        console.log('⏰ Connection timeout, activating fallback simulation...');
                         this.startFallbackSimulation();
                         resolve();
                     }
                 }, 10000);
 
             } catch (error) {
-                console.error('❌ Error de conexión MQTT:', error);
-                console.log('🧪 Activando simulación de respaldo...');
+                console.error('❌ MQTT connection error:', error);
+                console.log('🧪 Activating fallback simulation...');
                 this.startFallbackSimulation();
                 resolve();
             }
@@ -122,48 +122,48 @@ class MQTTService {
     }
 
     subscribeToTopics() {
-        console.log('📡 Suscribiéndose a tópicos del ESP32...');
+        console.log('📡 Subscribing to ESP32 topics...');
         
-        // Tópico principal de sensores
+        // Main sensor data topic
         this.client.subscribe('gm/ambientsystem/iot/sensors', { qos: 0 }, (err) => {
             if (err) {
-                console.error('❌ Error suscribiéndose a sensors:', err);
+                console.error('❌ Error subscribing to sensors:', err);
             } else {
-                console.log('✅ SUSCRITO a: gm/ambientsystem/iot/sensors');
+                console.log('✅ SUBSCRIBED to: gm/ambientsystem/iot/sensors');
             }
         });
         
-        // Tópico de estado
+        // Status topic
         this.client.subscribe('gm/ambientsystem/iot/status', { qos: 0 }, (err) => {
             if (err) {
-                console.error('❌ Error suscribiéndose a status:', err);
+                console.error('❌ Error subscribing to status:', err);
             } else {
-                console.log('✅ SUSCRITO a: gm/ambientsystem/iot/status');
+                console.log('✅ SUBSCRIBED to: gm/ambientsystem/iot/status');
             }
         });
 
-        console.log('🎯 Esperando datos del ESP32-ENV-001...');
-        console.log('📝 NOTA: Si tu ESP32 está en Wokwi, asegúrate que esté publicando datos');
+        console.log('🎯 Waiting for ESP32-ENV-001 data...');
+        console.log('📝 NOTE: If your ESP32 is in Wokwi, make sure it\'s publishing data');
     }
 
-    // Simulación de respaldo si MQTT falla
+    // Fallback simulation if MQTT fails
     startFallbackSimulation() {
-        console.log('🧪 INICIANDO SIMULACIÓN DE RESPALDO');
-        console.log('💡 La simulación simula datos del ESP32-ENV-001');
+        console.log('🧪 STARTING FALLBACK SIMULATION');
+        console.log('💡 Simulation mimics ESP32-ENV-001 data');
         
-        this.isConnected = true; // Marcar como conectado para propósitos de la app
+        this.isConnected = true; // Mark as connected for app purposes
         
-        // Generar datos inmediatamente
+        // Generate data immediately
         this.generateSimulatedData();
         
-        // Continuar cada 5 segundos
+        // Continue every 5 seconds
         setInterval(() => {
             this.generateSimulatedData();
         }, 5000);
     }
 
     generateSimulatedData() {
-        // Generar datos realistas que coincidan con el ESP32
+        // Generate realistic data matching ESP32
         const baseTemp = 30;
         const tempVariation = Math.sin(Date.now() / 10000) * 8;
         const temperature = baseTemp + tempVariation + (Math.random() - 0.5) * 6;
@@ -185,10 +185,10 @@ class MQTTService {
             servo_position: damper_open ? 90 : 0
         };
         
-        console.log('🧪 DATOS SIMULADOS:', {
+        console.log('🧪 SIMULATED DATA:', {
             temp: simulatedData.temperature + '°C',
             humidity: simulatedData.humidity + '%',
-            alert: simulatedData.alert_active ? '🚨 ACTIVA' : '✅ Normal'
+            alert: simulatedData.alert_active ? '🚨 ACTIVE' : '✅ Normal'
         });
         
         this.notifySubscribers(simulatedData);
@@ -196,7 +196,7 @@ class MQTTService {
 
     subscribe(callback) {
         this.subscribers.add(callback);
-        console.log('👂 SUSCRIPTOR AGREGADO. Total:', this.subscribers.size);
+        console.log('👂 SUBSCRIBER ADDED. Total:', this.subscribers.size);
     }
 
     unsubscribe(callback) {
@@ -204,51 +204,56 @@ class MQTTService {
     }
 
     notifySubscribers(data) {
-        console.log('🔔 NOTIFICANDO a', this.subscribers.size, 'suscriptores');
+        console.log('🔔 NOTIFYING', this.subscribers.size, 'subscribers');
         this.subscribers.forEach(callback => {
             try {
                 callback(data);
             } catch (error) {
-                console.error('❌ Error en callback:', error);
+                console.error('❌ Error in callback:', error);
             }
         });
     }
 
-    // Comandos de control para el ESP32
+    // Control commands for ESP32 - These match your Wokwi sketch exactly
     sendCommand(command) {
         if (this.client && this.isConnected && !this.client.disconnected) {
-            console.log('📤 ENVIANDO COMANDO AL ESP32:', command);
+            console.log('📤 SENDING COMMAND TO ESP32:', command);
+            console.log('📍 Publishing to: gm/ambientsystem/iot/control');
+            
+            // Send command to the exact control topic your ESP32 is listening to
             this.client.publish('gm/ambientsystem/iot/control', command, { qos: 0 }, (err) => {
                 if (err) {
-                    console.error('❌ Error enviando comando:', err);
+                    console.error('❌ Error sending command:', err);
                 } else {
-                    console.log('✅ Comando enviado exitosamente');
+                    console.log('✅ Command sent successfully to ESP32');
+                    console.log('🎯 ESP32 should respond within seconds');
                 }
             });
         } else {
-            console.log('📤 COMANDO SIMULADO:', command);
-            console.log('💡 MQTT no conectado, simulando comando');
+            console.log('📤 SIMULATED COMMAND:', command);
+            console.log('💡 MQTT not connected, simulating command');
         }
     }
 
+    // Remote control commands - Match exactly with your ESP32 sketch mqttCallback function
     openDamper() {
         this.sendCommand('OPEN_DAMPER');
-        console.log('🌬️ Comando: Abrir damper');
+        console.log('🌬️ Command: Open damper (10 seconds manual mode)');
     }
 
     closeDamper() {
         this.sendCommand('CLOSE_DAMPER');
-        console.log('🚪 Comando: Cerrar damper');
+        console.log('🚪 Command: Close damper');
     }
 
     silenceAlarm() {
         this.sendCommand('SILENCE_ALARM');
-        console.log('🔇 Comando: Silenciar alarma');
+        console.log('🔇 Command: Silence alarm (stops buzzer)');
     }
 
     resetSystem() {
         this.sendCommand('RESET_SYSTEM');
-        console.log('🔄 Comando: Reset sistema');
+        console.log('🔄 Command: Reset system (complete ESP32 reset)');
     }
 
     disconnect() {

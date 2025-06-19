@@ -2,119 +2,289 @@ class ChartService {
     constructor() {
         this.tempChart = null;
         this.humidityChart = null;
+        this.combinedChart = null;
         this.maxDataPoints = 50;
     }
 
-    initializeCharts() {
-        const commonOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 0
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        maxTicksLimit: 5
-                    }
-                },
-                y: {
-                    beginAtZero: true
-                }
-            }
-        };
-
-        this.tempChart = new Chart('temperatureChart', {
+    createTemperatureChart(canvasId) {
+        console.log('📊 Creando gráfico de temperatura...');
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        this.tempChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Temperature (°C)',
+                    label: 'Temperatura (°C)',
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    data: []
+                    data: [],
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
                 }]
             },
             options: {
-                ...commonOptions,
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0
+                },
                 scales: {
-                    ...commonOptions.scales,
+                    x: {
+                        ticks: {
+                            maxTicksLimit: 8
+                        }
+                    },
                     y: {
-                        ...commonOptions.scales.y,
+                        beginAtZero: false,
+                        suggestedMin: 10,
                         suggestedMax: 50
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
                     }
                 }
             }
         });
+        
+        console.log('✅ Gráfico de temperatura creado');
+        return this.tempChart;
+    }
 
-        this.humidityChart = new Chart('humidityChart', {
+    createHumidityChart(canvasId) {
+        console.log('📊 Creando gráfico de humedad...');
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        this.humidityChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Humidity (%)',
+                    label: 'Humedad (%)',
                     borderColor: 'rgb(54, 162, 235)',
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    data: []
+                    data: [],
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
                 }]
             },
             options: {
-                ...commonOptions,
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0
+                },
                 scales: {
-                    ...commonOptions.scales,
+                    x: {
+                        ticks: {
+                            maxTicksLimit: 8
+                        }
+                    },
                     y: {
-                        ...commonOptions.scales.y,
-                        suggestedMax: 100
+                        beginAtZero: true,
+                        max: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
                     }
                 }
             }
         });
+        
+        console.log('✅ Gráfico de humedad creado');
+        return this.humidityChart;
     }
 
-    updateCharts(data) {
-        const timestamp = new Date().toLocaleTimeString();
+    createCombinedChart(canvasId) {
+        console.log('📊 Creando gráfico combinado...');
+        const ctx = document.getElementById(canvasId).getContext('2d');
         
-        // Update temperature chart
-        const tempChart = this.tempChart;
-        tempChart.data.labels.push(timestamp);
-        tempChart.data.datasets[0].data.push(data.temperature);
+        this.combinedChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperatura (°C)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        data: [],
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Humedad (%)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        data: [],
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: false,
+                        suggestedMin: 10,
+                        suggestedMax: 50,
+                        title: {
+                            display: true,
+                            text: 'Temperatura (°C)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Humedad (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
         
-        if (tempChart.data.labels.length > this.maxDataPoints) {
-            tempChart.data.labels.shift();
-            tempChart.data.datasets[0].data.shift();
-        }
-        tempChart.update('none');
+        console.log('✅ Gráfico combinado creado');
+        return this.combinedChart;
+    }
 
-        // Update humidity chart
-        const humidityChart = this.humidityChart;
-        humidityChart.data.labels.push(timestamp);
-        humidityChart.data.datasets[0].data.push(data.humidity);
+    addDataPoint(chart, timestamp, value) {
+        if (!chart) return;
         
-        if (humidityChart.data.labels.length > this.maxDataPoints) {
-            humidityChart.data.labels.shift();
-            humidityChart.data.datasets[0].data.shift();
+        const timeLabel = timestamp.toLocaleTimeString();
+        
+        chart.data.labels.push(timeLabel);
+        chart.data.datasets[0].data.push(value);
+        
+        // Limitar cantidad de puntos
+        if (chart.data.labels.length > this.maxDataPoints) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
         }
-        humidityChart.update('none');
+        
+        chart.update('none');
+    }
+
+    addCombinedDataPoint(chart, timestamp, temperature, humidity) {
+        if (!chart) return;
+        
+        const timeLabel = timestamp.toLocaleTimeString();
+        
+        chart.data.labels.push(timeLabel);
+        chart.data.datasets[0].data.push(temperature); // Temperatura
+        chart.data.datasets[1].data.push(humidity);    // Humedad
+        
+        // Limitar cantidad de puntos
+        if (chart.data.labels.length > this.maxDataPoints) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+            chart.data.datasets[1].data.shift();
+        }
+        
+        chart.update('none');
+    }
+
+    // Método legacy para compatibilidad
+    initializeCharts() {
+        console.log('⚠️ Método initializeCharts() está deprecado. Usar createXXXChart()');
+    }
+
+    // Método legacy para compatibilidad
+    updateCharts(data) {
+        console.log('⚠️ Método updateCharts() está deprecado. Usar addDataPoint()');
+        const timestamp = new Date();
+        
+        if (this.tempChart) {
+            this.addDataPoint(this.tempChart, timestamp, data.temperature);
+        }
+        
+        if (this.humidityChart) {
+            this.addDataPoint(this.humidityChart, timestamp, data.humidity);
+        }
+        
+        if (this.combinedChart) {
+            this.addCombinedDataPoint(this.combinedChart, timestamp, data.temperature, data.humidity);
+        }
     }
 
     loadHistoricalData(data) {
-        // Clear existing data
-        this.tempChart.data.labels = [];
-        this.tempChart.data.datasets[0].data = [];
-        this.humidityChart.data.labels = [];
-        this.humidityChart.data.datasets[0].data = [];
+        console.log('📊 Cargando datos históricos...');
+        
+        // Limpiar datos existentes
+        if (this.tempChart) {
+            this.tempChart.data.labels = [];
+            this.tempChart.data.datasets[0].data = [];
+        }
+        
+        if (this.humidityChart) {
+            this.humidityChart.data.labels = [];
+            this.humidityChart.data.datasets[0].data = [];
+        }
+        
+        if (this.combinedChart) {
+            this.combinedChart.data.labels = [];
+            this.combinedChart.data.datasets[0].data = [];
+            this.combinedChart.data.datasets[1].data = [];
+        }
 
-        // Load historical data
+        // Cargar datos históricos
         data.forEach(record => {
-            const timestamp = new Date(record.timestamp).toLocaleTimeString();
-            this.tempChart.data.labels.push(timestamp);
-            this.tempChart.data.datasets[0].data.push(record.temperature);
-            this.humidityChart.data.labels.push(timestamp);
-            this.humidityChart.data.datasets[0].data.push(record.humidity);
+            const timestamp = new Date(record.timestamp);
+            
+            if (this.tempChart) {
+                this.addDataPoint(this.tempChart, timestamp, record.temperature);
+            }
+            
+            if (this.humidityChart) {
+                this.addDataPoint(this.humidityChart, timestamp, record.humidity);
+            }
+            
+            if (this.combinedChart) {
+                this.addCombinedDataPoint(this.combinedChart, timestamp, record.temperature, record.humidity);
+            }
         });
 
-        this.tempChart.update();
-        this.humidityChart.update();
+        // Actualizar gráficos
+        if (this.tempChart) this.tempChart.update();
+        if (this.humidityChart) this.humidityChart.update();
+        if (this.combinedChart) this.combinedChart.update();
+        
+        console.log('✅ Datos históricos cargados');
     }
 }
 

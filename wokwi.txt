@@ -96,7 +96,7 @@ LiquidCrystal I2C
 ArduinoJson
 ESP32Servo
 
-
+// IMPORTANTE
 sketch.ino:
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -235,11 +235,11 @@ const int SERVO_OPEN_POS = 90;
 
 void setup() {
     Serial.begin(115200);
-    Serial.println("System Starting");
+    Serial.println("🚀 System Starting...");
     
     lcd.init();
     lcd.backlight();
-    displayMessage("System Starting...", "Initializing", "", "");
+    displayMessage("🔧 System Starting", "Initializing...", "", "");
     
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(LED_PIN, OUTPUT);
@@ -260,8 +260,8 @@ void setup() {
     setupWiFi();
     setupMQTT();
     
-    Serial.println("System Ready");
-    displayMessage("System Ready", "WiFi Connected", "MQTT Secured", "Status: Normal");
+    Serial.println("✅ System Ready - All components initialized");
+    displayMessage("✅ System Ready", "WiFi Connected", "MQTT Secured", "Status: Normal");
     delay(2000);
 }
 
@@ -283,14 +283,13 @@ void loop() {
 
 void moveServo(int angle) {
     coolingServo.write(angle);
-    delay(500);
-    Serial.print("Servo moved to: ");
-    Serial.println(angle);
+    delay(1000);
+    Serial.println("🔄 Servo moved to: " + String(angle) + "°");
 }
 
 void setupWiFi() {
     WiFi.begin(ssid, password);
-    Serial.print("Connecting to WiFi");
+    Serial.print("🌐 Connecting to WiFi");
     
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
@@ -298,8 +297,7 @@ void setupWiFi() {
     }
     
     Serial.println();
-    Serial.print("WiFi connected - IP: ");
-    Serial.println(WiFi.localIP());
+    Serial.println("✅ WiFi connected - IP: " + WiFi.localIP().toString());
 }
 
 void setupMQTT() {
@@ -310,22 +308,20 @@ void setupMQTT() {
     client.setServer(mqtt_server, mqtt_port);
     client.setCallback(mqttCallback);
     
-    Serial.println("mTLS configured");
+    Serial.println("🔐 mTLS configured successfully");
 }
 
 void reconnectMQTT() {
     while (!client.connected()) {
-        Serial.print("MQTT connecting...");
+        Serial.print("📡 MQTT connecting...");
         
         String clientId = "ESP32Client-" + String(random(0xffff), HEX);
         
         if (client.connect(clientId.c_str())) {
-            Serial.println(" connected!");
+            Serial.println(" ✅ Connected!");
             client.subscribe(mqtt_control_topic);
         } else {
-            Serial.print(" failed, rc=");
-            Serial.print(client.state());
-            Serial.println(" retrying in 5 seconds");
+            Serial.println(" ❌ Failed, rc=" + String(client.state()) + " retrying in 5s");
             delay(5000);
         }
     }
@@ -337,7 +333,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         message += (char)payload[i];
     }
     
-    Serial.println("MQTT received: " + message);
+    Serial.println("📨 MQTT received: " + message);
     
     if (message == "OPEN_DAMPER") {
         activateManualDamper();
@@ -356,12 +352,11 @@ void readSensors() {
         temperature = dht.readTemperature();
         
         if (isnan(humidity) || isnan(temperature)) {
-            Serial.println("DHT22 error");
+            Serial.println("❌ DHT22 sensor error");
             return;
         }
         
-        Serial.printf("T: %.1fC, H: %.1f%% | Threshold: %.1fC\n", 
-                     temperature, humidity, TEMP_THRESHOLD);
+        Serial.println("🌡️  Temperature: " + String(temperature, 1) + "°C | 💧 Humidity: " + String(humidity, 1) + "% | 🎯 Threshold: " + String(TEMP_THRESHOLD, 1) + "°C");
         lastSensorRead = millis();
     }
 }
@@ -379,7 +374,7 @@ void checkButtons() {
             button1State = reading1;
             
             if (button1State == LOW) {
-                Serial.println("BUTTON 1 - Manual damper (10s)");
+                Serial.println("🟡 BUTTON 1 PRESSED - Manual damper activation (10s)");
                 activateManualDamper();
             }
         }
@@ -394,7 +389,7 @@ void checkButtons() {
             button2State = reading2;
             
             if (button2State == LOW) {
-                Serial.println("BUTTON 2 - Reset");
+                Serial.println("🔴 BUTTON 2 PRESSED - System Reset");
                 resetSystem();
             }
         }
@@ -405,7 +400,7 @@ void checkButtons() {
 }
 
 void activateManualDamper() {
-    Serial.println("Manual damper activated - 10s");
+    Serial.println("🔧 Manual damper activated for 10 seconds");
     manualDamperActive = true;
     manualDamperStartTime = millis();
     openDamper();
@@ -419,12 +414,12 @@ void updateDisplay() {
         snprintf(line2, sizeof(line2), "Humidity: %.1f%%", humidity);
         
         if (alertActive) {
-            strcpy(line3, "ALERT ACTIVE");
+            strcpy(line3, "⚠️  ALERT ACTIVE");
         } else if (manualDamperActive) {
             unsigned long remaining = (MANUAL_DAMPER_TIME - (millis() - manualDamperStartTime)) / 1000;
             snprintf(line3, sizeof(line3), "Manual: %lus left", remaining);
         } else {
-            strcpy(line3, "Status: Normal");
+            strcpy(line3, "✅ Status: Normal");
         }
         
         if (damperOpen) {
@@ -456,9 +451,9 @@ void publishData() {
         serializeJson(doc, jsonString);
         
         if (client.publish(mqtt_topic, jsonString.c_str())) {
-            Serial.println("Data published");
+            Serial.println("📤 Data published successfully");
         } else {
-            Serial.println("MQTT publish failed");
+            Serial.println("❌ MQTT publish failed");
         }
         
         lastMqttPublish = millis();
@@ -470,7 +465,7 @@ void handleAlerts() {
         if (!alertActive) {
             alertActive = true;
             alertStartTime = millis();
-            Serial.printf("ALERT! %.1fC > %.1fC\n", temperature, TEMP_THRESHOLD);
+            Serial.println("🚨 TEMPERATURE ALERT! " + String(temperature, 1) + "°C > " + String(TEMP_THRESHOLD, 1) + "°C");
             
             digitalWrite(LED_PIN, HIGH);
             openDamper();
@@ -497,7 +492,7 @@ void handleAlerts() {
             noTone(BUZZER_PIN);
             buzzerState = false;
             digitalWrite(LED_PIN, LOW);
-            Serial.println("Temperature normalized");
+            Serial.println("✅ Temperature normalized - Alert deactivated");
             
             if (!manualDamperActive) {
                 closeDamper();
@@ -510,10 +505,13 @@ void manageManualDamper() {
     if (manualDamperActive) {
         if (millis() - manualDamperStartTime >= MANUAL_DAMPER_TIME) {
             manualDamperActive = false;
-            Serial.println("Manual damper expired");
+            Serial.println("⏰ Manual damper time expired (10s completed)");
             
             if (!alertActive) {
+                Serial.println("🌬️  System status: NORMAL - Ventilation not necessary");
                 closeDamper();
+            } else {
+                Serial.println("🚨 Alert still active - Damper remains open");
             }
         }
     }
@@ -521,6 +519,7 @@ void manageManualDamper() {
 
 void openDamper() {
     if (!damperOpen) {
+        Serial.println("🔓 Opening damper...");
         moveServo(SERVO_OPEN_POS);
         damperOpen = true;
         
@@ -534,11 +533,14 @@ void openDamper() {
         String controlString;
         serializeJson(controlDoc, controlString);
         client.publish("gm/ambientsystem/iot/status", controlString.c_str());
+        
+        Serial.println("✅ Damper successfully opened");
     }
 }
 
 void closeDamper() {
     if (damperOpen) {
+        Serial.println("🔒 Closing damper...");
         moveServo(SERVO_CLOSED_POS);
         damperOpen = false;
         
@@ -551,17 +553,19 @@ void closeDamper() {
         String controlString;
         serializeJson(controlDoc, controlString);
         client.publish("gm/ambientsystem/iot/status", controlString.c_str());
+        
+        Serial.println("✅ Damper successfully closed");
     }
 }
 
 void silenceAlarm() {
     noTone(BUZZER_PIN);
     buzzerState = false;
-    Serial.println("Alarm silenced");
+    Serial.println("🔇 Alarm silenced by user");
 }
 
 void resetSystem() {
-    Serial.println("SYSTEM RESET");
+    Serial.println("🔄 SYSTEM RESET INITIATED");
     
     alertActive = false;
     manualDamperActive = false;
@@ -572,8 +576,9 @@ void resetSystem() {
     
     closeDamper();
     
-    Serial.println("Reset completed");
-    displayMessage("System Reset", "All systems", "returned to", "normal state");
+    Serial.println("✅ System reset completed - All components restored to normal state");
+    Serial.println("🌬️  System status: NORMAL - Ventilation not necessary");
+    displayMessage("🔄 System Reset", "All systems", "returned to", "normal state");
     delay(2000);
 }
 
@@ -588,4 +593,3 @@ void displayMessage(String line1, String line2, String line3, String line4) {
     lcd.setCursor(0, 3);
     lcd.print(line4);
 }
-

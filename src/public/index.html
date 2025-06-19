@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/main.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- MQTT.js library con soporte WebSocket completo -->
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
 </head>
 <body>
@@ -15,19 +14,19 @@
         <header class="row bg-primary text-white p-3 mb-4">
             <div class="col">
                 <h1 class="h3 mb-0">🏭 AmbientAlert System IoT</h1>
-                <p class="mb-0">Sistema de Monitoreo Ambiental Industrial</p>
+                <p class="mb-0">Industrial Environmental Monitoring System</p>
             </div>
             <div class="col-auto">
-                <div class="badge" id="connectionStatus">🔄 Conectando...</div>
+                <div class="badge" id="connectionStatus">🔄 Connecting...</div>
             </div>
         </header>
 
         <main class="row">
-            <!-- Valores Actuales -->
+            <!-- Current Values -->
             <div class="col-lg-4">
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0">📊 Valores Actuales ESP32-ENV-001</h5>
+                        <h5 class="mb-0">📊 Current Values ESP32-ENV-001</h5>
                     </div>
                     <div class="card-body">
                         <div class="row text-center">
@@ -35,54 +34,54 @@
                                 <div class="metric-card">
                                     <div class="metric-icon">🌡️</div>
                                     <div class="metric-value" id="currentTemp">--°C</div>
-                                    <div class="metric-label">Temperatura</div>
+                                    <div class="metric-label">Temperature</div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="metric-card">
                                     <div class="metric-icon">💧</div>
                                     <div class="metric-value" id="currentHum">--%</div>
-                                    <div class="metric-label">Humedad</div>
+                                    <div class="metric-label">Humidity</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Control Remoto ESP32 -->
+                <!-- ESP32 Remote Control -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0">🎮 Control Remoto ESP32</h5>
+                        <h5 class="mb-0">🎮 ESP32 Remote Control</h5>
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
                             <button id="openDamperBtn" class="btn btn-success btn-lg">
-                                🌬️ Abrir Damper (Manual)
+                                🌬️ Open Damper (Manual)
                             </button>
                             <button id="closeDamperBtn" class="btn btn-warning btn-lg">
-                                🚪 Cerrar Damper
+                                🚪 Close Damper
                             </button>
                             <button id="silenceAlarmBtn" class="btn btn-info btn-lg">
-                                🔇 Silenciar Alarma
+                                🔇 Silence Alarm
                             </button>
                             <button id="resetSystemBtn" class="btn btn-danger btn-lg">
-                                🔄 Reset Sistema
+                                🔄 Reset System
                             </button>
                         </div>
                         <small class="text-muted mt-2 d-block">
-                            ⚡ Comandos enviados directamente al ESP32 via MQTT
+                            ⚡ Commands sent directly to ESP32 via MQTT
                         </small>
                     </div>
                 </div>
 
-                <!-- Estado del Sistema -->
+                <!-- System Status -->
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">🚨 Estado del Sistema</h5>
+                        <h5 class="mb-0">🚨 System Status</h5>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info" id="systemStatus">
-                            ⏳ Esperando datos del ESP32...
+                            ⏳ Waiting for ESP32 data...
                         </div>
                         <div class="row mt-3">
                             <div class="col-6">
@@ -108,13 +107,13 @@
                 </div>
             </div>
 
-            <!-- Gráficos -->
+            <!-- Charts -->
             <div class="col-lg-8">
                 <div class="row">
                     <div class="col-md-6">
                         <div class="card mb-4">
                             <div class="card-header">
-                                <h5 class="mb-0">🌡️ Temperatura en Tiempo Real</h5>
+                                <h5 class="mb-0">🌡️ Real-time Temperature</h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="temperatureChart"></canvas>
@@ -124,7 +123,7 @@
                     <div class="col-md-6">
                         <div class="card mb-4">
                             <div class="card-header">
-                                <h5 class="mb-0">💧 Humedad en Tiempo Real</h5>
+                                <h5 class="mb-0">💧 Real-time Humidity</h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="humidityChart"></canvas>
@@ -133,10 +132,10 @@
                     </div>
                 </div>
 
-                <!-- Historial de Datos -->
+                <!-- Data History -->
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">📈 Historial de Datos</h5>
+                        <h5 class="mb-0">📈 Data History</h5>
                     </div>
                     <div class="card-body">
                         <canvas id="combinedChart"></canvas>

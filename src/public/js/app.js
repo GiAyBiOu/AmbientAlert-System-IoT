@@ -11,49 +11,49 @@ class AmbientAlertApp {
     }
 
     async init() {
-        console.log('🚀 Iniciando AmbientAlert System IoT Dashboard');
+        console.log('🚀 Starting AmbientAlert System IoT Dashboard');
         
         try {
-            // Inicializar servicios
+            // Initialize services
             await this.initServices();
             
-            // Configurar UI
+            // Setup UI
             this.setupUI();
             
-            // Configurar controles remotos
+            // Setup remote controls
             this.setupRemoteControls();
             
-            console.log('✅ Dashboard inicializado correctamente');
+            console.log('✅ Dashboard initialized successfully');
             
         } catch (error) {
-            console.error('❌ Error inicializando aplicación:', error);
-            this.updateConnectionStatus('❌ Error de conexión', 'danger');
+            console.error('❌ Error initializing application:', error);
+            this.updateConnectionStatus('❌ Connection error', 'danger');
         }
     }
 
     async initServices() {
-        // Conectar a MQTT
-        this.updateConnectionStatus('🔄 Conectando a MQTT...', 'warning');
+        // Connect to MQTT
+        this.updateConnectionStatus('🔄 Connecting to MQTT...', 'warning');
         await mqttService.connect();
         
-        // Suscribirse a datos
+        // Subscribe to data
         mqttService.subscribe((data) => {
-            console.log('📨 Datos recibidos en app:', data);
+            console.log('📨 Data received in app:', data);
             this.handleSensorData(data);
         });
         
-        // Inicializar gráficos
+        // Initialize charts
         this.initCharts();
         
         this.isConnected = true;
-        this.updateConnectionStatus('✅ Conectado al ESP32', 'success');
+        this.updateConnectionStatus('✅ Connected to ESP32', 'success');
     }
 
     setupUI() {
-        // Configurar elementos UI iniciales
-        this.updateSystemStatus('⏳ Esperando datos del ESP32...', 'info');
+        // Setup initial UI elements
+        this.updateSystemStatus(); // Call without parameters initially
         
-        // Resetear valores
+        // Reset values
         document.getElementById('currentTemp').textContent = '--°C';
         document.getElementById('currentHum').textContent = '--%';
         document.getElementById('ledStatus').textContent = '--';
@@ -63,53 +63,53 @@ class AmbientAlertApp {
     }
 
     setupRemoteControls() {
-        console.log('🎮 Configurando controles remotos para ESP32...');
+        console.log('🎮 Setting up remote controls for ESP32...');
         
-        // Botón Abrir Damper
+        // Open Damper Button
         document.getElementById('openDamperBtn').addEventListener('click', () => {
-            console.log('🎮 Usuario presiona: Abrir Damper');
+            console.log('🎮 User pressed: Open Damper');
             mqttService.openDamper();
-            this.showCommandFeedback('🌬️ Comando "Abrir Damper" enviado al ESP32');
+            this.showCommandFeedback('🌬️ "Open Damper" command sent to ESP32');
         });
         
-        // Botón Cerrar Damper
+        // Close Damper Button
         document.getElementById('closeDamperBtn').addEventListener('click', () => {
-            console.log('🎮 Usuario presiona: Cerrar Damper');
+            console.log('🎮 User pressed: Close Damper');
             mqttService.closeDamper();
-            this.showCommandFeedback('🚪 Comando "Cerrar Damper" enviado al ESP32');
+            this.showCommandFeedback('🚪 "Close Damper" command sent to ESP32');
         });
         
-        // Botón Silenciar Alarma
+        // Silence Alarm Button
         document.getElementById('silenceAlarmBtn').addEventListener('click', () => {
-            console.log('🎮 Usuario presiona: Silenciar Alarma');
+            console.log('🎮 User pressed: Silence Alarm');
             mqttService.silenceAlarm();
-            this.showCommandFeedback('🔇 Comando "Silenciar Alarma" enviado al ESP32');
+            this.showCommandFeedback('🔇 "Silence Alarm" command sent to ESP32');
         });
         
-        // Botón Reset Sistema
+        // Reset System Button
         document.getElementById('resetSystemBtn').addEventListener('click', () => {
-            if (confirm('¿Estás seguro de que quieres resetear el sistema ESP32?')) {
-                console.log('🎮 Usuario presiona: Reset Sistema');
+            if (confirm('Are you sure you want to reset the ESP32 system?')) {
+                console.log('🎮 User pressed: Reset System');
                 mqttService.resetSystem();
-                this.showCommandFeedback('🔄 Comando "Reset Sistema" enviado al ESP32');
+                this.showCommandFeedback('🔄 "Reset System" command sent to ESP32');
             }
         });
         
-        console.log('✅ Controles remotos configurados');
+        console.log('✅ Remote controls configured');
     }
 
     showCommandFeedback(message) {
-        // Mostrar feedback temporal del comando enviado
+        // Show temporary feedback for sent command
         const statusElement = document.getElementById('systemStatus');
         const originalContent = statusElement.innerHTML;
         
         statusElement.innerHTML = `<strong>${message}</strong>`;
         statusElement.className = 'alert alert-warning';
         
-        // Restaurar después de 3 segundos
+        // Restore after 3 seconds
         setTimeout(() => {
             if (this.lastDataReceived) {
-                this.updateSystemStatus();
+                this.updateSystemStatus(this.lastDataReceived);
             } else {
                 statusElement.innerHTML = originalContent;
                 statusElement.className = 'alert alert-info';
@@ -118,85 +118,96 @@ class AmbientAlertApp {
     }
 
     initCharts() {
-        console.log('📊 Inicializando gráficos...');
+        console.log('📊 Initializing charts...');
         
         try {
-            // Gráfico de temperatura
+            // Temperature chart
             this.charts.temperature = chartService.createTemperatureChart('temperatureChart');
             
-            // Gráfico de humedad
+            // Humidity chart
             this.charts.humidity = chartService.createHumidityChart('humidityChart');
             
-            // Gráfico combinado
+            // Combined chart
             this.charts.combined = chartService.createCombinedChart('combinedChart');
             
-            console.log('✅ Gráficos inicializados');
+            console.log('✅ Charts initialized');
             
         } catch (error) {
-            console.error('❌ Error inicializando gráficos:', error);
+            console.error('❌ Error initializing charts:', error);
         }
     }
 
     async handleSensorData(data) {
-        console.log('📊 Procesando datos del ESP32-ENV-001:', data);
+        console.log('📊 Processing data from ESP32-ENV-001:', data);
         
         this.lastDataReceived = data;
         
         try {
-            // Actualizar valores actuales
+            // Update current values
             this.updateCurrentValues(data);
             
-            // Actualizar estado del sistema
+            // Update system status
             this.updateSystemStatus(data);
             
-            // Actualizar gráficos
+            // Update charts
             this.updateCharts(data);
             
-            // Guardar en base de datos
+            // Save to database
             await this.saveToDatabase(data);
             
-            console.log('✅ Datos procesados correctamente');
+            console.log('✅ Data processed successfully');
             
         } catch (error) {
-            console.error('❌ Error procesando datos:', error);
+            console.error('❌ Error processing data:', error);
         }
     }
 
     updateCurrentValues(data) {
-        // Actualizar temperatura
+        // Update temperature with null check
         const tempElement = document.getElementById('currentTemp');
-        tempElement.textContent = `${data.temperature.toFixed(1)}°C`;
-        
-        // Color según temperatura
-        if (data.temperature > data.threshold) {
-            tempElement.style.color = '#dc3545'; // Rojo
-        } else if (data.temperature > data.threshold - 2) {
-            tempElement.style.color = '#fd7e14'; // Naranja
+        if (data && typeof data.temperature === 'number') {
+            tempElement.textContent = `${data.temperature.toFixed(1)}°C`;
+            
+            // Color based on temperature
+            if (data.temperature > data.threshold) {
+                tempElement.style.color = '#dc3545'; // Red
+            } else if (data.temperature > data.threshold - 2) {
+                tempElement.style.color = '#fd7e14'; // Orange
+            } else {
+                tempElement.style.color = '#198754'; // Green
+            }
         } else {
-            tempElement.style.color = '#198754'; // Verde
+            tempElement.textContent = '--°C';
+            tempElement.style.color = '';
         }
         
-        // Actualizar humedad
-        document.getElementById('currentHum').textContent = `${data.humidity.toFixed(1)}%`;
+        // Update humidity with null check
+        if (data && typeof data.humidity === 'number') {
+            document.getElementById('currentHum').textContent = `${data.humidity.toFixed(1)}%`;
+        } else {
+            document.getElementById('currentHum').textContent = '--%';
+        }
         
-        // Actualizar estados técnicos
-        document.getElementById('ledStatus').textContent = data.led_status;
-        document.getElementById('ledStatus').className = `badge ${data.led_status === 'ON' ? 'bg-warning' : 'bg-secondary'}`;
-        
-        document.getElementById('servoPosition').textContent = `${data.servo_position}°`;
-        document.getElementById('servoPosition').className = `badge ${data.servo_position > 0 ? 'bg-info' : 'bg-secondary'}`;
-        
-        document.getElementById('damperStatus').textContent = data.damper_open ? 'ABIERTO' : 'CERRADO';
-        document.getElementById('damperStatus').className = `badge ${data.damper_open ? 'bg-success' : 'bg-secondary'}`;
-        
-        document.getElementById('threshold').textContent = `${data.threshold}°C`;
+        // Update technical states with null checks
+        if (data) {
+            document.getElementById('ledStatus').textContent = data.led_status || '--';
+            document.getElementById('ledStatus').className = `badge ${data.led_status === 'ON' ? 'bg-warning' : 'bg-secondary'}`;
+            
+            document.getElementById('servoPosition').textContent = `${data.servo_position || '--'}°`;
+            document.getElementById('servoPosition').className = `badge ${data.servo_position > 0 ? 'bg-info' : 'bg-secondary'}`;
+            
+            document.getElementById('damperStatus').textContent = data.damper_open ? 'OPEN' : 'CLOSED';
+            document.getElementById('damperStatus').className = `badge ${data.damper_open ? 'bg-success' : 'bg-secondary'}`;
+            
+            document.getElementById('threshold').textContent = `${data.threshold || '--'}°C`;
+        }
     }
 
     updateSystemStatus(data = null) {
         const statusElement = document.getElementById('systemStatus');
         
         if (!data) {
-            statusElement.innerHTML = '⏳ Esperando datos del ESP32...';
+            statusElement.innerHTML = '⏳ Waiting for ESP32 data...';
             statusElement.className = 'alert alert-info';
             return;
         }
@@ -204,17 +215,21 @@ class AmbientAlertApp {
         let statusText = '';
         let alertClass = 'alert-success';
         
+        // Add null checks before using toFixed()
         if (data.alert_active) {
-            statusText = `🚨 ALERTA ACTIVA - Temperatura: ${data.temperature.toFixed(1)}°C > ${data.threshold}°C`;
+            const tempStr = (typeof data.temperature === 'number') ? data.temperature.toFixed(1) : '--';
+            const thresholdStr = (typeof data.threshold === 'number') ? data.threshold.toFixed(1) : '--';
+            statusText = `🚨 ALERT ACTIVE - Temperature: ${tempStr}°C > ${thresholdStr}°C`;
             alertClass = 'alert-danger';
         } else if (data.manual_damper_active) {
-            statusText = `🔧 Modo Manual Activo - Damper controlado manualmente`;
+            statusText = `🔧 Manual Mode Active - Damper manually controlled`;
             alertClass = 'alert-warning';
-        } else if (data.temperature > data.threshold - 3) {
-            statusText = `⚠️ Temperatura elevada: ${data.temperature.toFixed(1)}°C (Umbral: ${data.threshold}°C)`;
+        } else if (typeof data.temperature === 'number' && typeof data.threshold === 'number' && data.temperature > data.threshold - 3) {
+            statusText = `⚠️ Elevated temperature: ${data.temperature.toFixed(1)}°C (Threshold: ${data.threshold}°C)`;
             alertClass = 'alert-warning';
         } else {
-            statusText = `✅ Sistema Normal - Temperatura: ${data.temperature.toFixed(1)}°C`;
+            const tempStr = (typeof data.temperature === 'number') ? data.temperature.toFixed(1) : '--';
+            statusText = `✅ System Normal - Temperature: ${tempStr}°C`;
             alertClass = 'alert-success';
         }
         
@@ -226,23 +241,23 @@ class AmbientAlertApp {
         const timestamp = new Date();
         
         try {
-            // Actualizar gráfico de temperatura
-            if (this.charts.temperature) {
+            // Update temperature chart
+            if (this.charts.temperature && typeof data.temperature === 'number') {
                 chartService.addDataPoint(this.charts.temperature, timestamp, data.temperature);
             }
             
-            // Actualizar gráfico de humedad
-            if (this.charts.humidity) {
+            // Update humidity chart
+            if (this.charts.humidity && typeof data.humidity === 'number') {
                 chartService.addDataPoint(this.charts.humidity, timestamp, data.humidity);
             }
             
-            // Actualizar gráfico combinado
-            if (this.charts.combined) {
+            // Update combined chart
+            if (this.charts.combined && typeof data.temperature === 'number' && typeof data.humidity === 'number') {
                 chartService.addCombinedDataPoint(this.charts.combined, timestamp, data.temperature, data.humidity);
             }
             
         } catch (error) {
-            console.error('❌ Error actualizando gráficos:', error);
+            console.error('❌ Error updating charts:', error);
         }
     }
 
@@ -261,10 +276,10 @@ class AmbientAlertApp {
                 servo_position: data.servo_position
             });
             
-            console.log('💾 Datos guardados en BD:', response);
+            console.log('💾 Data saved to DB:', response);
             
         } catch (error) {
-            console.error('❌ Error guardando en BD:', error);
+            console.error('❌ Error saving to DB:', error);
         }
     }
 
@@ -275,15 +290,15 @@ class AmbientAlertApp {
     }
 }
 
-// Inicializar aplicación cuando el DOM esté listo
+// Initialize application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🌐 DOM cargado, iniciando aplicación...');
+    console.log('🌐 DOM loaded, starting application...');
     new AmbientAlertApp();
 });
 
-// Manejar errores globales
+// Handle global errors
 window.addEventListener('error', (error) => {
-    console.error('❌ Error global:', error);
+    console.error('❌ Global error:', error);
 });
 
 export default AmbientAlertApp; 

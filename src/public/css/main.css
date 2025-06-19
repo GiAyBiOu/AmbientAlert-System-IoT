@@ -1,3 +1,74 @@
+/* ========================================
+   🏭 INDUSTRIAL DASHBOARD COLOR SCHEME
+   Modern, Professional & Eye-catching
+======================================== */
+
+:root {
+    /* Primary Industrial Colors */
+    --industrial-blue: #1e3a8a;      /* Deep blue for headers */
+    --industrial-teal: #0f766e;      /* Teal for accents */
+    --industrial-slate: #334155;     /* Slate for text */
+    --industrial-orange: #ea580c;    /* Warning orange */
+    --industrial-emerald: #047857;   /* Success green */
+    --industrial-red: #dc2626;       /* Alert red */
+    
+    /* Background Colors */
+    --bg-primary: #f8fafc;           /* Light gray background */
+    --bg-secondary: #e2e8f0;         /* Medium gray */
+    --bg-dark: #1e293b;              /* Dark slate */
+    --bg-card: #ffffff;              /* Pure white cards */
+    
+    /* Text Colors */
+    --text-primary: #0f172a;         /* Dark text */
+    --text-secondary: #64748b;       /* Gray text */
+    --text-white: #ffffff;           /* White text */
+    
+    /* Border & Shadow */
+    --border-color: #cbd5e1;
+    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-strong: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Body & General Styles */
+body {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+/* Header Styling */
+.bg-primary {
+    background: linear-gradient(135deg, var(--industrial-blue) 0%, var(--industrial-teal) 100%) !important;
+    box-shadow: var(--shadow-strong);
+    border-bottom: 3px solid var(--industrial-orange);
+}
+
+/* Cards & Containers */
+.card {
+    background: var(--bg-card);
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 4px solid var(--industrial-teal);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-strong);
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    border-bottom: 2px solid var(--border-color);
+    border-radius: 12px 12px 0 0 !important;
+    color: var(--industrial-blue);
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+}
+
+/* Status & Metric Cards */
 .status-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -6,35 +77,229 @@
 
 .status-item {
     text-align: center;
-    padding: 1rem;
-    background-color: #f8f9fa;
-    border-radius: 0.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-primary) 100%);
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.status-item:hover {
+    border-color: var(--industrial-teal);
+    transform: scale(1.02);
 }
 
 .status-item h6 {
     margin-bottom: 0.5rem;
-    color: #6c757d;
+    color: var(--industrial-slate);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .status-item p {
     margin-bottom: 0;
+    font-weight: 500;
 }
 
-.card {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+/* Metric Cards for Temperature/Humidity */
+.metric-card {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-primary) 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--industrial-teal) 0%, var(--industrial-blue) 100%);
 }
 
+.metric-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--industrial-teal);
+    box-shadow: var(--shadow-strong);
+}
+
+.metric-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--industrial-blue);
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-strong);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--industrial-emerald) 0%, #10b981 100%);
+    color: var(--text-white);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--industrial-orange) 0%, #f59e0b 100%);
+    color: var(--text-white);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--industrial-red) 0%, #ef4444 100%);
+    color: var(--text-white);
+}
+
+/* Badge Styling */
 .badge {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bg-success {
+    background: linear-gradient(135deg, var(--industrial-emerald) 0%, #10b981 100%) !important;
+}
+
+.bg-warning {
+    background: linear-gradient(135deg, var(--industrial-orange) 0%, #f59e0b 100%) !important;
+}
+
+.bg-danger {
+    background: linear-gradient(135deg, var(--industrial-red) 0%, #ef4444 100%) !important;
+}
+
+.bg-info {
+    background: linear-gradient(135deg, var(--industrial-teal) 0%, #06b6d4 100%) !important;
+}
+
+.bg-secondary {
+    background: linear-gradient(135deg, var(--text-secondary) 0%, #94a3b8 100%) !important;
+}
+
+/* Alert Styling */
+.alert {
+    border: none;
+    border-radius: 8px;
+    border-left: 4px solid;
+    font-weight: 500;
+    box-shadow: var(--shadow-soft);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #dcfdf7 0%, #f0fdfa 100%);
+    border-left-color: var(--industrial-emerald);
+    color: var(--industrial-emerald);
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+    border-left-color: var(--industrial-orange);
+    color: var(--industrial-orange);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+    border-left-color: var(--industrial-red);
+    color: var(--industrial-red);
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #cffafe 0%, #f0fdff 100%);
+    border-left-color: var(--industrial-teal);
+    color: var(--industrial-teal);
+}
+
+/* Connection Status Badge */
+#connectionStatus {
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: var(--shadow-soft);
 }
 
+/* Chart Container */
 canvas {
     width: 100% !important;
     height: 250px !important;
+    border-radius: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-value {
+        font-size: 1.5rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Animation Classes */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--industrial-teal);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--industrial-blue);
 } 

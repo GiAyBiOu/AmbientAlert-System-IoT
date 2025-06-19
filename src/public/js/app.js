@@ -79,13 +79,6 @@ class AmbientAlertApp {
             this.showCommandFeedback('🚪 "Close Damper" command sent to ESP32');
         });
         
-        // Silence Alarm Button
-        document.getElementById('silenceAlarmBtn').addEventListener('click', () => {
-            console.log('🎮 User pressed: Silence Alarm');
-            mqttService.silenceAlarm();
-            this.showCommandFeedback('🔇 "Silence Alarm" command sent to ESP32');
-        });
-        
         // Reset System Button
         document.getElementById('resetSystemBtn').addEventListener('click', () => {
             if (confirm('Are you sure you want to reset the ESP32 system?')) {

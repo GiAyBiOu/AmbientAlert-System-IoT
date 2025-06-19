@@ -246,11 +246,6 @@ class MQTTService {
         console.log('🚪 Command: Close damper');
     }
 
-    silenceAlarm() {
-        this.sendCommand('SILENCE_ALARM');
-        console.log('🔇 Command: Silence alarm (stops buzzer)');
-    }
-
     resetSystem() {
         this.sendCommand('RESET_SYSTEM');
         console.log('🔄 Command: Reset system (complete ESP32 reset)');
